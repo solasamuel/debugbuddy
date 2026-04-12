@@ -1,0 +1,469 @@
+{
+  "project": "DebugBuddy",
+  "version": "1.0",
+  "description": "Test plan for the DebugBuddy Chrome extension",
+  "test_strategy": {
+    "unit_tests": "Vitest for pure logic (API client, error parsing, caching, deduplication)",
+    "integration_tests": "Vitest + chrome-mock for background service worker and storage interactions",
+    "component_tests": "React Testing Library for popup UI components",
+    "e2e_tests": "Manual testing on real websites + Puppeteer for automated Chrome extension testing",
+    "coverage_target": "80% for src/utils/ and src/api/, functional coverage for UI"
+  },
+  "test_suites": [
+    {
+      "id": "TS1",
+      "suite": "Error Capture — chrome.debugger Integration",
+      "type": "integration",
+      "cases": [
+        {
+          "id": "TC1.1",
+          "title": "Debugger attaches to active tab on activation",
+          "preconditions": ["Extension is installed", "A tab with a webpage is active"],
+          "steps": [
+            "Click the DebugBuddy extension icon",
+            "Verify chrome.debugger.attach is called with the active tab ID",
+            "Verify Runtime.enable and Log.enable commands are sent"
+          ],
+          "expected_result": "Debugger is attached and listening for errors",
+          "priority": "P0"
+        },
+        {
+          "id": "TC1.2",
+          "title": "Debugger detaches on extension deactivation",
+          "preconditions": ["Debugger is attached to a tab"],
+          "steps": [
+            "Close the extension popup or navigate away",
+            "Verify chrome.debugger.detach is called"
+          ],
+          "expected_result": "Debugger is cleanly detached, no orphan sessions",
+          "priority": "P0"
+        },
+        {
+          "id": "TC1.3",
+          "title": "Captures uncaught exception (Runtime.exceptionThrown)",
+          "preconditions": ["Debugger is attached"],
+          "steps": [
+            "Navigate to a page with a JavaScript error (e.g., undefined variable)",
+            "Observe the Runtime.exceptionThrown event"
+          ],
+          "expected_result": "Error message, stack trace, source URL, and line number are captured",
+          "priority": "P0"
+        },
+        {
+          "id": "TC1.4",
+          "title": "Captures console.error() calls",
+          "preconditions": ["Debugger is attached"],
+          "steps": [
+            "Run console.error('test error') in the page console",
+            "Observe the Log.entryAdded event"
+          ],
+          "expected_result": "Console error is captured with message and call site",
+          "priority": "P0"
+        },
+        {
+          "id": "TC1.5",
+          "title": "Handles already-attached debugger gracefully",
+          "preconditions": ["Another DevTools instance or extension has the debugger attached"],
+          "steps": [
+            "Attempt to attach chrome.debugger to the tab"
+          ],
+          "expected_result": "User-friendly error message shown, extension does not crash",
+          "priority": "P1"
+        },
+        {
+          "id": "TC1.6",
+          "title": "Handles tab close while debugger is attached",
+          "preconditions": ["Debugger is attached to a tab"],
+          "steps": [
+            "Close the tab"
+          ],
+          "expected_result": "Extension handles onDetach event, cleans up state without errors",
+          "priority": "P1"
+        }
+      ]
+    },
+    {
+      "id": "TS2",
+      "suite": "Error Storage & Deduplication",
+      "type": "unit",
+      "cases": [
+        {
+          "id": "TC2.1",
+          "title": "Errors are stored in chrome.storage.local",
+          "preconditions": ["An error has been captured"],
+          "steps": [
+            "Capture an error via the debugger",
+            "Read chrome.storage.local"
+          ],
+          "expected_result": "Error object is persisted with message, stack, source, timestamp, and hash",
+          "priority": "P0"
+        },
+        {
+          "id": "TC2.2",
+          "title": "Duplicate errors are grouped by message hash",
+          "preconditions": ["The same error occurs multiple times"],
+          "steps": [
+            "Trigger the same error 5 times",
+            "Check storage"
+          ],
+          "expected_result": "One entry with count=5, not 5 separate entries",
+          "priority": "P1"
+        },
+        {
+          "id": "TC2.3",
+          "title": "Rolling buffer limits storage to 50 errors per tab",
+          "preconditions": ["50 unique errors are already stored for a tab"],
+          "steps": [
+            "Trigger a 51st unique error"
+          ],
+          "expected_result": "Oldest error is evicted, total remains at 50",
+          "priority": "P1"
+        },
+        {
+          "id": "TC2.4",
+          "title": "Errors persist across popup open/close",
+          "preconditions": ["Errors have been captured"],
+          "steps": [
+            "Close the popup",
+            "Reopen the popup"
+          ],
+          "expected_result": "Previously captured errors are still displayed",
+          "priority": "P0"
+        }
+      ]
+    },
+    {
+      "id": "TS3",
+      "suite": "Claude API Integration",
+      "type": "unit + integration",
+      "cases": [
+        {
+          "id": "TC3.1",
+          "title": "API client sends correct request format",
+          "preconditions": ["Valid API key is configured"],
+          "steps": [
+            "Call the explain function with an error object",
+            "Inspect the outgoing HTTP request"
+          ],
+          "expected_result": "Request includes system prompt, error context in user message, and correct headers",
+          "priority": "P0"
+        },
+        {
+          "id": "TC3.2",
+          "title": "Explanation is structured (summary, cause, fix, links)",
+          "preconditions": ["API responds successfully"],
+          "steps": [
+            "Send a common error (e.g., TypeError: Cannot read properties of undefined)",
+            "Parse the response"
+          ],
+          "expected_result": "Response contains all four sections: summary, cause, fix, links",
+          "priority": "P0"
+        },
+        {
+          "id": "TC3.3",
+          "title": "Invalid API key returns user-friendly error",
+          "preconditions": ["API key is invalid or missing"],
+          "steps": [
+            "Attempt to explain an error"
+          ],
+          "expected_result": "User sees 'Invalid API key' message with link to options page",
+          "priority": "P0"
+        },
+        {
+          "id": "TC3.4",
+          "title": "Rate limit (429) is handled with retry indication",
+          "preconditions": ["API returns 429 Too Many Requests"],
+          "steps": [
+            "Trigger rate limit scenario"
+          ],
+          "expected_result": "User sees rate limit message, no crash, retry available",
+          "priority": "P1"
+        },
+        {
+          "id": "TC3.5",
+          "title": "Network timeout is handled gracefully",
+          "preconditions": ["Network is slow or offline"],
+          "steps": [
+            "Disconnect network",
+            "Attempt to explain an error"
+          ],
+          "expected_result": "User sees network error message within 10 seconds",
+          "priority": "P1"
+        },
+        {
+          "id": "TC3.6",
+          "title": "Cached responses are returned for repeated errors",
+          "preconditions": ["An error has been explained previously"],
+          "steps": [
+            "Request explanation for the same error again"
+          ],
+          "expected_result": "Cached response is returned immediately without API call",
+          "priority": "P1"
+        },
+        {
+          "id": "TC3.7",
+          "title": "Cache expires after TTL",
+          "preconditions": ["A cached response exists", "TTL (1 hour) has elapsed"],
+          "steps": [
+            "Request explanation after cache expiry"
+          ],
+          "expected_result": "Fresh API call is made, new response is cached",
+          "priority": "P2"
+        }
+      ]
+    },
+    {
+      "id": "TS4",
+      "suite": "Popup UI — Error List & Detail",
+      "type": "component",
+      "cases": [
+        {
+          "id": "TC4.1",
+          "title": "Error list renders captured errors",
+          "preconditions": ["Errors exist in storage"],
+          "steps": [
+            "Open the popup"
+          ],
+          "expected_result": "Errors displayed in reverse-chronological order with severity icon, message preview, timestamp",
+          "priority": "P0"
+        },
+        {
+          "id": "TC4.2",
+          "title": "Empty state is shown when no errors exist",
+          "preconditions": ["No errors in storage for the current tab"],
+          "steps": [
+            "Open the popup"
+          ],
+          "expected_result": "Helpful message like 'No errors captured yet' is displayed",
+          "priority": "P1"
+        },
+        {
+          "id": "TC4.3",
+          "title": "Clicking an error shows detail panel with AI explanation",
+          "preconditions": ["Errors exist, API key is configured"],
+          "steps": [
+            "Click on an error in the list"
+          ],
+          "expected_result": "Detail panel expands showing full error, stack trace, and AI explanation",
+          "priority": "P0"
+        },
+        {
+          "id": "TC4.4",
+          "title": "Loading spinner shows during API call",
+          "preconditions": ["Error is clicked, API call is in progress"],
+          "steps": [
+            "Click an error that hasn't been explained yet"
+          ],
+          "expected_result": "Spinner/skeleton is visible until response arrives",
+          "priority": "P0"
+        },
+        {
+          "id": "TC4.5",
+          "title": "API failure shows error state in detail panel",
+          "preconditions": ["API call fails"],
+          "steps": [
+            "Click an error when API is unreachable"
+          ],
+          "expected_result": "Error message with retry button is shown in the detail panel",
+          "priority": "P1"
+        },
+        {
+          "id": "TC4.6",
+          "title": "Copy to clipboard works for error and explanation",
+          "preconditions": ["Detail panel is open with explanation"],
+          "steps": [
+            "Click copy button for the error message",
+            "Click copy button for the AI explanation"
+          ],
+          "expected_result": "Content is copied to clipboard, visual confirmation shown",
+          "priority": "P2"
+        }
+      ]
+    },
+    {
+      "id": "TS5",
+      "suite": "API Key Management (BYOK) & Settings",
+      "type": "component + integration",
+      "cases": [
+        {
+          "id": "TC5.1",
+          "title": "First-run onboarding shows API key prompt",
+          "preconditions": ["Extension freshly installed", "No API key in storage"],
+          "steps": [
+            "Open the extension popup for the first time"
+          ],
+          "expected_result": "Welcome/onboarding screen is shown with API key input, 'Get a key' link, and 'Save & Validate' button",
+          "priority": "P0"
+        },
+        {
+          "id": "TC5.2",
+          "title": "Valid API key is accepted and stored",
+          "preconditions": ["Onboarding or options page is open"],
+          "steps": [
+            "Paste a valid Claude API key",
+            "Click 'Save & Validate'"
+          ],
+          "expected_result": "Test request succeeds, key is stored in chrome.storage.local, success indicator shown, onboarding dismisses to error list",
+          "priority": "P0"
+        },
+        {
+          "id": "TC5.3",
+          "title": "Invalid API key shows inline error",
+          "preconditions": ["Onboarding or options page is open"],
+          "steps": [
+            "Enter an invalid API key (e.g., 'sk-ant-invalid')",
+            "Click 'Save & Validate'"
+          ],
+          "expected_result": "Validation request returns 401; inline error: 'Invalid API key. Please check and try again.' Key is NOT stored.",
+          "priority": "P0"
+        },
+        {
+          "id": "TC5.4",
+          "title": "'Get a key' link opens Anthropic Console",
+          "preconditions": ["Onboarding or options page is open"],
+          "steps": [
+            "Click the 'Get a key' link"
+          ],
+          "expected_result": "New browser tab opens to https://console.anthropic.com/settings/keys",
+          "priority": "P1"
+        },
+        {
+          "id": "TC5.5",
+          "title": "API key is masked by default on options page",
+          "preconditions": ["A valid key is stored", "Options page is open"],
+          "steps": [
+            "Observe the key input field",
+            "Click the reveal/eye toggle"
+          ],
+          "expected_result": "Key shows as 'sk-ant-•••••••' by default; toggling reveals the full key",
+          "priority": "P1"
+        },
+        {
+          "id": "TC5.6",
+          "title": "User can remove their API key",
+          "preconditions": ["A valid key is stored", "Options page is open"],
+          "steps": [
+            "Click 'Remove Key'",
+            "Confirm in the confirmation dialog"
+          ],
+          "expected_result": "Key is deleted from chrome.storage.local, status indicator shows grey/missing, popup reverts to onboarding state",
+          "priority": "P0"
+        },
+        {
+          "id": "TC5.7",
+          "title": "Popup shows banner and disables explain when no key",
+          "preconditions": ["No API key is stored", "Errors have been captured"],
+          "steps": [
+            "Open popup",
+            "Observe the error list and attempt to click explain"
+          ],
+          "expected_result": "Banner shows 'API key required' with link to options; explain button is disabled with tooltip; error list still displays captured errors",
+          "priority": "P0"
+        },
+        {
+          "id": "TC5.8",
+          "title": "Network error during key validation shows helpful message",
+          "preconditions": ["Onboarding or options page is open", "Network is disconnected"],
+          "steps": [
+            "Enter a valid-format API key",
+            "Click 'Save & Validate'"
+          ],
+          "expected_result": "Inline error: 'Could not reach the API. Check your connection.' Key is NOT stored.",
+          "priority": "P1"
+        },
+        {
+          "id": "TC5.9",
+          "title": "Key update replaces old key immediately",
+          "preconditions": ["A valid key is stored"],
+          "steps": [
+            "Enter a new API key on the options page",
+            "Click 'Save & Validate'"
+          ],
+          "expected_result": "Old key is overwritten; new key is used for subsequent API calls",
+          "priority": "P1"
+        },
+        {
+          "id": "TC5.10",
+          "title": "Auto-explain toggle persists across sessions",
+          "preconditions": ["Options page is open"],
+          "steps": [
+            "Toggle auto-explain on",
+            "Close and reopen options page"
+          ],
+          "expected_result": "Toggle is still in the 'on' position",
+          "priority": "P2"
+        }
+      ]
+    },
+    {
+      "id": "TS6",
+      "suite": "End-to-End — Real-World Sites",
+      "type": "e2e",
+      "cases": [
+        {
+          "id": "TC6.1",
+          "title": "Capture and explain errors on a site with known JS errors",
+          "preconditions": ["Extension installed, API key configured"],
+          "steps": [
+            "Navigate to a site with known JavaScript errors",
+            "Activate DebugBuddy",
+            "Open popup and view captured errors",
+            "Click an error to see explanation"
+          ],
+          "expected_result": "Full flow works: capture → display → explain",
+          "priority": "P0"
+        },
+        {
+          "id": "TC6.2",
+          "title": "Extension works on CSP-restricted sites",
+          "preconditions": ["Extension installed"],
+          "steps": [
+            "Navigate to a site with strict Content Security Policy (e.g., GitHub)",
+            "Activate DebugBuddy"
+          ],
+          "expected_result": "Error capture works (chrome.debugger is not affected by page CSP)",
+          "priority": "P1"
+        },
+        {
+          "id": "TC6.3",
+          "title": "Extension handles pages with no errors",
+          "preconditions": ["Extension installed"],
+          "steps": [
+            "Navigate to a clean page with no JS errors",
+            "Open popup"
+          ],
+          "expected_result": "Empty state shown, no false positives",
+          "priority": "P1"
+        },
+        {
+          "id": "TC6.4",
+          "title": "Extension handles rapid error bursts",
+          "preconditions": ["Extension installed"],
+          "steps": [
+            "Navigate to a page that throws errors in a tight loop (e.g., 100+ errors/sec)"
+          ],
+          "expected_result": "Errors are deduplicated, extension remains responsive, no memory leak",
+          "priority": "P1"
+        },
+        {
+          "id": "TC6.5",
+          "title": "Badge count updates correctly",
+          "preconditions": ["Extension installed with icon visible"],
+          "steps": [
+            "Navigate to a page with errors",
+            "Observe the badge count on the extension icon",
+            "Open the popup to view errors"
+          ],
+          "expected_result": "Badge shows error count, clears/updates after viewing",
+          "priority": "P2"
+        }
+      ]
+    }
+  ],
+  "total_test_cases": 34,
+  "priority_breakdown": {
+    "P0_critical": 16,
+    "P1_important": 12,
+    "P2_nice_to_have": 6
+  }
+}

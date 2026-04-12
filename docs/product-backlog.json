@@ -1,0 +1,298 @@
+{
+  "project": "DebugBuddy",
+  "version": "1.0",
+  "description": "AI-Powered Error Message Explainer for Developers — Chrome Extension",
+  "author": "Sola Samuel / Spearhead Finance Ltd",
+  "date": "April 2026",
+  "epics": [
+    {
+      "id": "E1",
+      "title": "Project Setup & Scaffolding",
+      "priority": "P0",
+      "estimate": "Evening 1",
+      "stories": [
+        {
+          "id": "S1.1",
+          "title": "Initialise TypeScript + React project with Chrome Extension manifest v3",
+          "description": "Set up package.json, tsconfig, webpack/vite config for Chrome extension bundling. Create manifest.json with required permissions (debugger, activeTab, storage).",
+          "acceptance_criteria": [
+            "Project builds successfully with npm run build",
+            "manifest.json is valid MV3 with correct permissions",
+            "Extension loads in chrome://extensions without errors"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S1.2",
+          "title": "Create folder structure and boilerplate files",
+          "description": "Set up src/ directory with background/, popup/, content/, utils/, types/ folders. Create entry points for background service worker, popup React app, and content script.",
+          "acceptance_criteria": [
+            "All entry points exist and compile",
+            "Popup renders a placeholder React component",
+            "Background service worker registers without errors"
+          ],
+          "priority": "P0",
+          "story_points": 2
+        },
+        {
+          "id": "S1.3",
+          "title": "Configure development tooling",
+          "description": "Set up ESLint, Prettier, and hot-reload for Chrome extension development. Add npm scripts for dev, build, and lint.",
+          "acceptance_criteria": [
+            "npm run dev starts a watch build",
+            "Linting and formatting rules are enforced",
+            "README documents setup steps"
+          ],
+          "priority": "P1",
+          "story_points": 2
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "title": "Error Capture via Chrome DevTools Protocol",
+      "priority": "P0",
+      "estimate": "Evening 1–2",
+      "stories": [
+        {
+          "id": "S2.1",
+          "title": "Attach chrome.debugger to active tab",
+          "description": "Background service worker attaches the chrome.debugger API to the currently active tab when the user activates the extension. Handle attach/detach lifecycle and permissions.",
+          "acceptance_criteria": [
+            "Debugger attaches to the active tab on extension activation",
+            "Debugger detaches cleanly when extension is deactivated or tab closes",
+            "Graceful error handling if debugger is already attached"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S2.2",
+          "title": "Listen for console errors via Runtime.exceptionThrown",
+          "description": "Use chrome.debugger.sendCommand to enable Runtime domain and listen for Runtime.exceptionThrown and Log.entryAdded events. Capture error message, stack trace, source URL, and line number.",
+          "acceptance_criteria": [
+            "Console errors are captured in real-time",
+            "Stack trace, source URL, and line/column are extracted",
+            "Both uncaught exceptions and console.error() calls are captured"
+          ],
+          "priority": "P0",
+          "story_points": 5
+        },
+        {
+          "id": "S2.3",
+          "title": "Error deduplication and storage",
+          "description": "Store captured errors in chrome.storage.local with deduplication by message hash. Maintain a rolling buffer of the most recent 50 errors per tab.",
+          "acceptance_criteria": [
+            "Duplicate errors are grouped with a count",
+            "Storage does not grow unbounded",
+            "Errors persist across popup open/close cycles"
+          ],
+          "priority": "P1",
+          "story_points": 3
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "title": "Claude API Integration",
+      "priority": "P0",
+      "estimate": "Evening 2",
+      "stories": [
+        {
+          "id": "S3.1",
+          "title": "Claude API client module",
+          "description": "Create a reusable API client that sends error messages to the Claude API (Anthropic SDK) and returns structured explanations. Support API key configuration via extension options page.",
+          "acceptance_criteria": [
+            "API client sends well-formed requests to Claude API",
+            "API key is stored securely in chrome.storage.local",
+            "Network errors and rate limits are handled gracefully"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S3.2",
+          "title": "Prompt engineering for error explanations",
+          "description": "Design a system prompt that instructs Claude to explain errors in plain language with: a summary, likely cause, suggested fix, and relevant documentation links. Include error context (stack trace, source URL) in the user message.",
+          "acceptance_criteria": [
+            "Explanations are structured with summary, cause, fix, and links",
+            "Responses are concise and developer-friendly",
+            "Context (stack trace, URL) improves explanation quality"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S3.3",
+          "title": "Response caching",
+          "description": "Cache Claude API responses keyed by error message hash to avoid redundant API calls and reduce latency for repeated errors.",
+          "acceptance_criteria": [
+            "Identical errors return cached responses instantly",
+            "Cache has a configurable TTL (default 1 hour)",
+            "Cache can be cleared manually by the user"
+          ],
+          "priority": "P1",
+          "story_points": 2
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "title": "Popup UI — Error List & Explanations",
+      "priority": "P0",
+      "estimate": "Evening 3",
+      "stories": [
+        {
+          "id": "S4.1",
+          "title": "Popup layout and error list view",
+          "description": "Build the React popup UI showing a scrollable list of captured errors with severity icons (error/warning), truncated message preview, and timestamp.",
+          "acceptance_criteria": [
+            "Popup displays captured errors in reverse-chronological order",
+            "Each error shows severity, message preview, and time",
+            "Empty state shows a helpful message when no errors exist"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S4.2",
+          "title": "Error detail and AI explanation panel",
+          "description": "Clicking an error expands an inline detail panel showing the full error message, stack trace, and the AI-generated explanation. Show a loading spinner while the Claude API responds.",
+          "acceptance_criteria": [
+            "Detail panel shows full error, stack trace, and explanation",
+            "Loading state is visible during API call",
+            "Error state is shown if the API call fails"
+          ],
+          "priority": "P0",
+          "story_points": 5
+        },
+        {
+          "id": "S4.3",
+          "title": "Copy and share actions",
+          "description": "Add buttons to copy the error message, stack trace, or AI explanation to the clipboard. Optionally format as Markdown for pasting into issues.",
+          "acceptance_criteria": [
+            "Copy-to-clipboard works for each section",
+            "Visual feedback (toast/checkmark) confirms copy",
+            "Markdown format option is available"
+          ],
+          "priority": "P2",
+          "story_points": 2
+        }
+      ]
+    },
+    {
+      "id": "E5",
+      "title": "API Key Management (BYOK) & Settings",
+      "priority": "P0",
+      "estimate": "Evening 3–4",
+      "stories": [
+        {
+          "id": "S5.1",
+          "title": "First-run onboarding flow for API key entry",
+          "description": "On first install (no API key stored), the popup shows a welcome/onboarding screen prompting the user to enter their own Claude API key. Include a 'Get a key' link to the Anthropic Console and a 'Save & Validate' button that tests the key before storing it.",
+          "acceptance_criteria": [
+            "First open of popup shows onboarding when no key exists",
+            "User can paste their Claude API key into a masked input field",
+            "'Get a key' link opens https://console.anthropic.com/settings/keys in a new tab",
+            "'Save & Validate' sends a test request and shows success or inline error",
+            "After successful validation, onboarding dismisses and popup shows error list"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S5.2",
+          "title": "Options page for API key management",
+          "description": "Create a Chrome extension options page where users can view (masked), update, re-validate, and remove their Claude API key. Show a key status indicator (valid/invalid/missing). Accessible from extension context menu and popup settings gear.",
+          "acceptance_criteria": [
+            "Options page is accessible from extension context menu and popup gear icon",
+            "API key input is masked by default with a toggle to reveal",
+            "API key is validated with a test request on save",
+            "Key is stored in chrome.storage.local (not synced)",
+            "User can remove their key with a confirmation dialog",
+            "Key status indicator shows green (valid), red (invalid), or grey (missing)"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S5.3",
+          "title": "Graceful degradation when API key is missing or invalid",
+          "description": "When no valid API key is configured, error capture continues to work but the explain feature is disabled. Show a persistent banner in the popup with a link to the options page. Explain buttons show a tooltip indicating the key is required.",
+          "acceptance_criteria": [
+            "Error capture works normally without a key",
+            "Explain button is disabled with tooltip when key is missing",
+            "Popup shows a banner: 'API key required' with link to options",
+            "No API calls are attempted without a valid key"
+          ],
+          "priority": "P0",
+          "story_points": 2
+        },
+        {
+          "id": "S5.4",
+          "title": "Toggle auto-explain and filter settings",
+          "description": "Allow users to toggle automatic explanation of errors vs. manual click-to-explain. Add filters for error severity levels (error, warning, info).",
+          "acceptance_criteria": [
+            "Auto-explain toggle works and persists across sessions",
+            "Severity filter controls which errors appear in the list",
+            "Settings are stored in chrome.storage.local"
+          ],
+          "priority": "P2",
+          "story_points": 2
+        }
+      ]
+    },
+    {
+      "id": "E6",
+      "title": "Polish, Testing & Release",
+      "priority": "P1",
+      "estimate": "Evening 4",
+      "stories": [
+        {
+          "id": "S6.1",
+          "title": "Extension icon, branding, and badge",
+          "description": "Design extension icon (16/48/128px). Show a badge count on the extension icon indicating the number of unread errors on the current tab.",
+          "acceptance_criteria": [
+            "Icon displays correctly at all sizes",
+            "Badge count updates in real-time as errors are captured",
+            "Badge clears when errors are viewed"
+          ],
+          "priority": "P1",
+          "story_points": 2
+        },
+        {
+          "id": "S6.2",
+          "title": "End-to-end testing on real websites",
+          "description": "Test error capture and explanation on real-world sites with JavaScript errors. Verify extension works on pages with CSP restrictions and various error types.",
+          "acceptance_criteria": [
+            "Extension captures errors on at least 5 real-world sites",
+            "No console errors from the extension itself",
+            "CSP-restricted sites do not block core functionality"
+          ],
+          "priority": "P0",
+          "story_points": 3
+        },
+        {
+          "id": "S6.3",
+          "title": "Build production bundle and prepare for Chrome Web Store",
+          "description": "Create optimised production build, write store listing description, and package as .zip for Chrome Web Store submission.",
+          "acceptance_criteria": [
+            "Production build is under 5MB",
+            "All debug/dev code is stripped",
+            "Store listing assets (description, screenshots) are ready"
+          ],
+          "priority": "P1",
+          "story_points": 2
+        }
+      ]
+    }
+  ],
+  "total_story_points": 51,
+  "total_stories": 18,
+  "priority_summary": {
+    "P0_must_have": 13,
+    "P1_should_have": 3,
+    "P2_nice_to_have": 2
+  }
+}
