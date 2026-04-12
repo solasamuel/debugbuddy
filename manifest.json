@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "DebugBuddy",
+  "version": "1.0.0",
+  "description": "AI-powered error message explainer for developers",
+  "permissions": [
+    "debugger",
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "public/icons/icon-16.png",
+      "48": "public/icons/icon-48.png",
+      "128": "public/icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "options_page": "src/options/index.html",
+  "icons": {
+    "16": "public/icons/icon-16.png",
+    "48": "public/icons/icon-48.png",
+    "128": "public/icons/icon-128.png"
+  }
+}
