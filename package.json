@@ -1,0 +1,43 @@
+{
+  "name": "debugbuddy",
+  "version": "1.0.0",
+  "description": "AI-powered error message explainer for developers — Chrome Extension",
+  "author": "Sola Samuel / Spearhead Finance Ltd",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "tsc --noEmit && vite build",
+    "lint": "eslint src/ --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,html}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "npm run build && cd dist && zip -r ../debugbuddy-1.0.0.zip ."
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/chrome": "^0.0.304",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/parser": "^8.31.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.2",
+    "vitest": "^3.1.2"
+  }
+}
