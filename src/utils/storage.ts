@@ -6,10 +6,7 @@ export async function getFromStorage<T>(key: string): Promise<T | undefined> {
   return result[key] as T | undefined;
 }
 
-export async function setInStorage<T>(
-  key: string,
-  value: T
-): Promise<void> {
+export async function setInStorage<T>(key: string, value: T): Promise<void> {
   await chrome.storage.local.set({ [key]: value });
 }
 
