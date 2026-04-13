@@ -402,7 +402,52 @@ debugbuddy/
 
 ---
 
-## 8. Build & Deployment
+## 8. Branching Strategy & Versioning
+
+### Branch Model
+
+```
+main ← stable, tagged releases only
+  │
+  └── develop ← default working branch
+        │
+        ├── feature/E2-error-capture
+        ├── feature/E3-claude-api
+        └── ...
+```
+
+| Branch | Purpose | Merges into |
+|--------|---------|-------------|
+| `main` | Production-ready releases; tagged after each epic | — |
+| `develop` | Integration branch; default for all work | `main` (after each epic) |
+| `feature/*` | One branch per epic or story | `develop` |
+
+### Release Versioning
+
+A new version is **tagged on `main` after every completed epic**. Version follows `0.EPIC.PATCH` during pre-release, incrementing to `1.0.0` at Chrome Web Store submission.
+
+| Tag | Epic | Milestone |
+|-----|------|-----------|
+| `v0.1.0` | E1 — Project Setup & Scaffolding | Scaffold, build, test infra |
+| `v0.2.0` | E2 — Error Capture via DevTools Protocol | chrome.debugger integration |
+| `v0.3.0` | E3 — Claude API Integration | AI explanations working |
+| `v0.4.0` | E4 — Popup UI: Error List & Explanations | Full user-facing UI |
+| `v0.5.0` | E5 — API Key Management (BYOK) & Settings | Options page, onboarding |
+| `v0.6.0` | E6 — Polish, Testing & Release | Branding, E2E, store-ready |
+| `v1.0.0` | Release | Chrome Web Store submission |
+
+### Workflow per Epic
+
+1. Branch `feature/EX-name` from `develop`
+2. Implement stories using TDD (red → green → refactor)
+3. Commit per story with conventional message (`feat(S1.1): ...`)
+4. Merge `feature/EX-name` → `develop` (no-ff)
+5. Merge `develop` → `main` (no-ff)
+6. Tag `main` with `vX.Y.0`
+
+---
+
+## 9. Build & Deployment
 
 | Stage | Command | Output |
 |-------|---------|--------|
@@ -414,7 +459,7 @@ debugbuddy/
 
 ---
 
-## 9. Future Considerations (Out of Scope for v1.0)
+## 10. Future Considerations (Out of Scope for v1.0)
 
 - **DevTools Panel** — dedicated panel inside Chrome DevTools instead of popup
 - **Multi-browser support** — Firefox (WebExtensions API) and Edge
