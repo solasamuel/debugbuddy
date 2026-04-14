@@ -2,6 +2,16 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import App from "@/popup/App";
 
+// Mock chrome.tabs for the App useEffect
+vi.stubGlobal("chrome", {
+  ...chrome,
+  tabs: {
+    query: vi.fn((_query: unknown, cb: (tabs: { id: number }[]) => void) =>
+      cb([{ id: 1 }]),
+    ),
+  },
+});
+
 describe("Popup App", () => {
   it("renders the DebugBuddy heading", () => {
     render(<App />);
