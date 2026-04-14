@@ -1,13 +1,81 @@
+import { useState, useEffect } from "react";
+import type { CapturedError, Explanation } from "@/types/error";
+import ErrorList from "./components/ErrorList";
+import ErrorDetail from "./components/ErrorDetail";
+import EmptyState from "./components/EmptyState";
 import "./styles/popup.css";
 
 export default function App() {
+  const [errors, setErrors] = useState<CapturedError[]>([]);
+  const [selectedError, setSelectedError] = useState<CapturedError | null>(null);
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (tabId) {
+        chrome.runtime.sendMessage({ type: "GET_ERRORS", tabId }, (response) => {
+          if (response?.errors) setErrors(response.errors);
+        });
+      }
+    });
+
+    const listener = (message: { type: string; payload: CapturedError }) => {
+      if (message.type === "ERROR_CAPTURED") {
+        setErrors((prev) => [message.payload, ...prev]);
+      }
+    };
+    chrome.runtime.onMessage.addListener(listener);
+    return () => chrome.runtime.onMessage.removeListener(listener);
+  }, []);
+
+  const handleSelectError = (error: CapturedError) => {
+    setSelectedError(error);
+    setExplanation(null);
+    setApiError(null);
+    setLoading(true);
+
+    chrome.runtime.sendMessage({ type: "EXPLAIN_ERROR", error }, (response) => {
+      setLoading(false);
+      if (response?.explanation) {
+        setExplanation(response.explanation);
+      } else if (response?.error) {
+        setApiError(response.error);
+      }
+    });
+  };
+
+  const handleBack = () => {
+    setSelectedError(null);
+    setExplanation(null);
+    setApiError(null);
+  };
+
   return (
     <div className="popup-container">
       <header className="popup-header">
         <h1>DebugBuddy</h1>
+        {selectedError && (
+          <button className="back-button" onClick={handleBack}>
+            ← Back
+          </button>
+        )}
       </header>
       <main className="popup-body">
-        <p className="empty-state">No errors captured yet.</p>
+        {selectedError ? (
+          <ErrorDetail
+            error={selectedError}
+            explanation={explanation}
+            loading={loading}
+            apiError={apiError}
+          />
+        ) : errors.length > 0 ? (
+          <ErrorList errors={errors} onSelectError={handleSelectError} />
+        ) : (
+          <EmptyState />
+        )}
       </main>
     </div>
   );
