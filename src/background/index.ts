@@ -4,6 +4,8 @@
 import { attachDebugger, detachDebugger, markDetached } from "./debugger";
 import { parseExceptionThrown, parseLogEntry } from "./error-capture";
 import { addError, clearErrors, getErrors } from "./error-store";
+import { explainError } from "@/api/claude-client";
+import { clearCache } from "@/api/cache";
 
 export const EXTENSION_NAME = "DebugBuddy";
 
@@ -58,6 +60,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "CLEAR_ERRORS" && message.tabId) {
     clearErrors(message.tabId).then(() => sendResponse({ ok: true }));
     return true;
+  }
+  if (message.type === "EXPLAIN_ERROR" && message.error) {
+    explainError(message.error)
+      .then((explanation) => sendResponse({ explanation }))
+      .catch((err) =>
+        sendResponse({ error: err instanceof Error ? err.message : String(err) }),
+      );
+    return true;
+  }
+  if (message.type === "CLEAR_CACHE") {
+    clearCache();
+    sendResponse({ ok: true });
+    return;
   }
   sendResponse({ ok: true });
 });
