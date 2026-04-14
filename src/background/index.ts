@@ -4,7 +4,7 @@
 import { attachDebugger, detachDebugger, markDetached } from "./debugger";
 import { parseExceptionThrown, parseLogEntry } from "./error-capture";
 import { addError, clearErrors, getErrors } from "./error-store";
-import { explainError } from "@/api/claude-client";
+import { explainError, validateApiKey } from "@/api/claude-client";
 import { clearCache } from "@/api/cache";
 
 export const EXTENSION_NAME = "DebugBuddy";
@@ -59,6 +59,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message.type === "CLEAR_ERRORS" && message.tabId) {
     clearErrors(message.tabId).then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (message.type === "VALIDATE_KEY" && message.key) {
+    validateApiKey(message.key)
+      .then((valid) => sendResponse({ valid }))
+      .catch(() => sendResponse({ valid: false }));
     return true;
   }
   if (message.type === "EXPLAIN_ERROR" && message.error) {

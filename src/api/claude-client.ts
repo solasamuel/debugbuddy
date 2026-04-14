@@ -42,6 +42,7 @@ export async function explainError(error: ErrorContext): Promise<Explanation> {
         "content-type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": ANTHROPIC_VERSION,
+        "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
         model: MODEL,
@@ -84,6 +85,7 @@ export async function validateApiKey(key: string): Promise<boolean> {
         "content-type": "application/json",
         "x-api-key": key,
         "anthropic-version": ANTHROPIC_VERSION,
+        "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
         model: MODEL,
