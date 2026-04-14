@@ -4,6 +4,7 @@
 import { attachDebugger, detachDebugger, markDetached } from "./debugger";
 import { parseExceptionThrown, parseLogEntry } from "./error-capture";
 import { addError, clearErrors, getErrors } from "./error-store";
+import { updateBadge, clearBadge } from "./badge";
 import { explainError, validateApiKey } from "@/api/claude-client";
 import { clearCache } from "@/api/cache";
 
@@ -24,12 +25,9 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
   }
 
   if (captured) {
-    addError(source.tabId, captured).then(() => {
-      chrome.action.setBadgeText({ text: "!", tabId: source.tabId });
-      chrome.action.setBadgeBackgroundColor({
-        color: "#e74c3c",
-        tabId: source.tabId,
-      });
+    addError(source.tabId, captured).then(async () => {
+      const errors = await getErrors(source.tabId!);
+      updateBadge(source.tabId!, errors.length);
       chrome.runtime.sendMessage({
         type: "ERROR_CAPTURED",
         payload: captured,
@@ -54,7 +52,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
   if (message.type === "GET_ERRORS" && message.tabId) {
-    getErrors(message.tabId).then((errors) => sendResponse({ errors }));
+    getErrors(message.tabId).then((errors) => {
+      clearBadge(message.tabId);
+      sendResponse({ errors });
+    });
     return true;
   }
   if (message.type === "CLEAR_ERRORS" && message.tabId) {
