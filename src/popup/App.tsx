@@ -21,10 +21,14 @@ export default function App() {
       setHasApiKey(!!result.apiKey);
     });
 
-    // Load errors
+    // Attach debugger and load errors for the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id;
       if (tabId) {
+        // Attach debugger (no-op if already attached)
+        chrome.runtime.sendMessage({ type: "ATTACH_DEBUGGER", tabId });
+
+        // Load existing errors
         chrome.runtime.sendMessage({ type: "GET_ERRORS", tabId }, (response) => {
           if (response?.errors) setErrors(response.errors);
         });
