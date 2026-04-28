@@ -20,10 +20,23 @@ describe("S6.2 — Extension structure validation for real-world use", () => {
       readFileSync(resolve(ROOT, "manifest.json"), "utf-8"),
     );
 
-    // Should not have broad host permissions
-    expect(manifest.host_permissions).toBeUndefined();
     // Should not request tabs (we use activeTab instead)
     expect(manifest.permissions).not.toContain("tabs");
+    // Should not have broad permissions
+    expect(manifest.permissions).not.toContain("<all_urls>");
+    expect(manifest.permissions).not.toContain("history");
+    expect(manifest.permissions).not.toContain("cookies");
+    expect(manifest.permissions).not.toContain("webRequest");
+    expect(manifest.permissions).not.toContain("notifications");
+  });
+
+  it("manifest.json only requests host permission for the Claude API", () => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(ROOT, "manifest.json"), "utf-8"),
+    );
+
+    // The only external host should be Anthropic's API
+    expect(manifest.host_permissions).toEqual(["https://api.anthropic.com/*"]);
   });
 
   it("background service worker entry point exists", () => {
