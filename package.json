@@ -14,7 +14,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,html}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "package": "npm run build && cd dist && zip -r ../debugbuddy-1.0.0.zip ."
+    "package": "rm -f debugbuddy-*.zip && npm run build && cd dist && zip -r ../debugbuddy-1.0.0.zip ."
   },
   "dependencies": {
     "react": "^19.1.0",

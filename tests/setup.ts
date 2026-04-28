@@ -57,6 +57,15 @@ const chromeMock = {
     setBadgeText: vi.fn(),
     setBadgeBackgroundColor: vi.fn(),
   },
+  tabs: {
+    onActivated: {
+      addListener: vi.fn(),
+    },
+    onUpdated: {
+      addListener: vi.fn(),
+    },
+    query: vi.fn(),
+  },
 };
 
 vi.stubGlobal("chrome", chromeMock);

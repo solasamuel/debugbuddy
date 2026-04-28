@@ -1,7 +1,7 @@
 // DebugBuddy — Background Service Worker
 // Handles chrome.debugger lifecycle, error capture, and message relay.
 
-import { attachDebugger, detachDebugger, markDetached } from "./debugger";
+import { attachDebugger, detachDebugger, isAttached, markDetached } from "./debugger";
 import { parseExceptionThrown, parseLogEntry } from "./error-capture";
 import { addError, clearErrors, getErrors } from "./error-store";
 import { updateBadge, clearBadge } from "./badge";
@@ -12,6 +12,19 @@ export const EXTENSION_NAME = "DebugBuddy";
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("DebugBuddy installed");
+});
+
+// Auto-attach debugger when a tab is activated or navigates
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  if (!isAttached(tabId)) {
+    attachDebugger(tabId);
+  }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === "loading" && !isAttached(tabId)) {
+    attachDebugger(tabId);
+  }
 });
 
 chrome.debugger.onEvent.addListener((source, method, params) => {
